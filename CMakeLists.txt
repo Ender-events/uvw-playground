@@ -8,6 +8,9 @@ project(uvw-playground
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Option to enable/disable address sanitizer
+option(SANITIZE_ADDRESS "Enable address sanitizer" OFF)
+
 # Fetch the header-only library "uvw" from GitHub
 include(FetchContent)
 FetchContent_Declare(uvw
@@ -25,13 +28,14 @@ FetchContent_MakeAvailable(libuv)
 
 # Create the executable target
 add_executable(echo echo.cpp)
-
 # Set C++ version for the target
 target_compile_features(echo PUBLIC cxx_std_20)
-
 # Link the "uvw" library to the target
 target_link_libraries(echo PRIVATE uvw::uvw uv_a)
 
 add_executable(channel channel.cpp)
 target_compile_features(channel PUBLIC cxx_std_20)
-target_link_libraries(channel PRIVATE uvw::uvw uv_a)
+target_compile_options(channel PRIVATE $<$<BOOL:${SANITIZE_ADDRESS}>:-fsanitize=address -fno-omit-frame-pointer>)
+target_link_libraries(channel PRIVATE
+    $<$<BOOL:${SANITIZE_ADDRESS}>:-fsanitize=address>
+    uvw::uvw uv_a)
