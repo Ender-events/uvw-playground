@@ -13,6 +13,8 @@
 #include "lazy.hh"
 #include <uvw.hpp>
 
+#include "async_sleep.hh"
+
 template <typename Derived>
 class IntrusiveNode {
 public:
@@ -202,6 +204,8 @@ channel<Type>::channel(uvw::loop& loop, std::size_t bufferSize)
         if (!open_) {
             std::cout << "handleRecv_ closed\n";
             handleRecv_->close();
+        } else if (!consumeds_.empty() || !senders_.empty()) {
+            handleSend_->send();
         }
     });
     handleSend_->on<uvw::async_event>([this](const uvw::async_event&, const uvw::async_handle&) {
@@ -261,6 +265,7 @@ auto tick(std::shared_ptr<channel<int>> tick, std::shared_ptr<channel<int>> tack
             std::cout << "tack closed\n";
             break;
         }
+        co_await async_sleep{std::chrono::milliseconds{500}};
         std::cout << "tick (" << std::this_thread::get_id() << "): " << a << '\n';
         co_await tack->send(a);
     }
@@ -274,6 +279,7 @@ auto tack(std::shared_ptr<channel<int>> tick, std::shared_ptr<channel<int>> tack
         if (!ok) {
             break;
         }
+        co_await async_sleep{std::chrono::milliseconds{500}};
         std::cout << "tack (" << std::this_thread::get_id() << "): " << a << '\n';
         ++a;
         if (a < 10) {
