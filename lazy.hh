@@ -211,14 +211,17 @@ public:
     }
 };
 
+namespace __internal_task
+{
 template <class, template <class...> class>
 inline constexpr bool __is_specialization_of = false;
 template <class... _Args, template <class...> class _Templ>
 inline constexpr bool __is_specialization_of<_Templ<_Args...>, _Templ> = true;
+}
 
 template <class _Ty>
 concept _Await_suspend_result =
-    same_as<_Ty, void> || same_as<_Ty, bool> || __is_specialization_of<_Ty, coroutine_handle>;
+    same_as<_Ty, void> || same_as<_Ty, bool> || __internal_task::__is_specialization_of<_Ty, coroutine_handle>;
 
 template <class _Ty, class _Promise = void>
 concept simple_awaitable = requires(_Ty& _Val, const coroutine_handle<_Promise>& _Coro) {
